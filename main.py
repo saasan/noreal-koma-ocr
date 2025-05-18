@@ -222,7 +222,7 @@ def process_images(image_dir: str, output_dir: str) -> None:
             "series": [],
             "characters": [],
             "suzuri": [],
-            "line-sticker": [],
+            "lineSticker": [],
         }
         info.update(extract_filename_info(image_file.name))
         info.update(get_image_informations(str(image_file)))
