@@ -197,16 +197,16 @@ def extract_filename_info(filename: str) -> dict:
 
 def process_images(image_dir: str, output_dir: str) -> None:
     """ディレクトリ内の画像を処理し、JSONに結果を保存"""
-    image_dir, output_dir = Path(image_dir), Path(output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
+    image_dir_path, output_dir_path = Path(image_dir), Path(output_dir)
+    output_dir_path.mkdir(parents=True, exist_ok=True)
 
-    for image_file in sorted(image_dir.iterdir()):
+    for image_file in sorted(image_dir_path.iterdir()):
         if image_file.suffix.lower() not in {".png", ".jpg", ".jpeg"}:
             continue
 
         print(f"Image file: {image_file.name}")
 
-        output_path = output_dir / image_file.with_suffix(".json").name
+        output_path = output_dir_path / image_file.with_suffix(".json").name
 
         # 既にJSONファイルが存在する場合はスキップ
         if output_path.exists():
