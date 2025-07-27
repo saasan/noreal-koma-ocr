@@ -125,7 +125,7 @@ def load_image(inputs: dict) -> dict:
 
 
 @chain
-def image_model(inputs: dict) -> str | list[str] | dict:
+def image_model(inputs: dict) -> str | list[str | dict]:
     """画像とプロンプトを用いてモデルを呼び出す"""
     model = ChatOpenAI(
         model=settings.model_name,
