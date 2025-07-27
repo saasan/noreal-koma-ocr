@@ -223,6 +223,8 @@ def process_images(image_dir: str, output_dir: str) -> None:
             "characters": [],
             "suzuri": [],
             "lineSticker": [],
+            "instagram": "",
+            "QRCode": {},
         }
         info.update(extract_filename_info(image_file.name))
         info.update(get_image_informations(str(image_file)))
