@@ -128,8 +128,7 @@ def load_image(inputs: dict) -> dict:
 def image_model(inputs: dict) -> str | list[str] | dict:
     """画像とプロンプトを用いてモデルを呼び出す"""
     model = ChatOpenAI(
-        api_key=settings.openai_api_key,
-        model_name=settings.model_name,
+        model=settings.model_name,
         temperature=settings.temperature,
     )
 
