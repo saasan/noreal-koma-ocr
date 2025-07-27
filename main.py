@@ -184,7 +184,7 @@ def extract_filename_info(filename: str) -> dict:
     if not match:
         return {"id": None, "publishDate": None}
 
-    image_id = match.group(1)
+    image_id = settings.x_url + match.group(1)
     publish_date_str = match.group(2)
 
     # JSTからUTCに変換し、ISO 8601形式にする
