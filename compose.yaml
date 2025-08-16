@@ -1,0 +1,20 @@
+services:
+  app:
+    build:
+      context: .
+      args:
+        - UID=${UID:-10001}
+    volumes:
+      - type: bind
+        source: ./images
+        target: /app/images
+        read_only: true
+      - type: bind
+        source: ./output
+        target: /app/output
+    environment:
+      - OPENAI_API_KEY
+      - IMAGE_DIR
+      - OUTPUT_DIR
+      - MODEL_NAME
+      - TEMPERATURE
