@@ -21,7 +21,8 @@ class Settings(BaseSettings):
     # よみがなの変換後文字
     reading_trans_after: str = "ーー"
     # XのURL
-    x_url: str = "https://twitter.com/noreal_koma/status/"
+    x_url: str = "https://x.com/noreal_koma/status/"
+    twitter_url: str = "https://twitter.com/noreal_koma/status/"
 
 
 settings = Settings()

@@ -184,6 +184,7 @@ def extract_filename_info(filename: str) -> dict:
         return {"id": None, "publishDate": None}
 
     image_id = settings.x_url + match.group(1)
+    embed = settings.twitter_url + match.group(1)
     publish_date_str = match.group(2)
 
     # JSTからUTCに変換し、ISO 8601形式にする
@@ -191,7 +192,7 @@ def extract_filename_info(filename: str) -> dict:
     dt = datetime.strptime(publish_date_str, "%Y%m%d%H%M%S").replace(tzinfo=jst)
     publish_date_iso = dt.astimezone(timezone.utc).isoformat()
 
-    return {"id": image_id, "publishDate": publish_date_iso}
+    return {"id": image_id, "embed": embed, "publishDate": publish_date_iso}
 
 
 def process_images(image_dir: str, output_dir: str) -> None:
@@ -214,6 +215,7 @@ def process_images(image_dir: str, output_dir: str) -> None:
 
         info = {
             "id": None,
+            "embed": None,
             "publishDate": None,
             "text": [],
             "reading": [],
