@@ -15,3 +15,10 @@ GPT-4o mini の Vision を用いて
 
     # OpenAI APIキー
     OPENAI_API_KEY=OpenAI APIキー
+
+## Docker Compose での実行
+
+実行前に UID を指定してビルドする
+
+    docker compose build --build-arg UID=$(id -u)
+    docker compose up
