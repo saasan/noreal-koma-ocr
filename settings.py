@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     model_name: str = "gpt-4o-mini"
     # モデルに渡すTemperatureの値
     temperature: float = 0.0
+    # テキストの置換対象文字列
+    text_replace_before: list[str] = ["...", "・・・"]
+    # テキストの置換後文字列
+    text_replace_after: list[str] = ["…", "…"]
     # テキストの変換対象文字
     text_trans_before: str = "·‐‑’♯　〜"
     # テキストの変換後文字

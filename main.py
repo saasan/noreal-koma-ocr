@@ -59,9 +59,13 @@ class ImageInformation(BaseModel):
 def clean_text(text) -> str:
     """
     以下の処理を行う
+    - 指定された文字列を置換
     - 指定された文字を変換
     - 結合文字等を正規化
     """
+    for before, after in zip(settings.text_replace_before, settings.text_replace_after):
+        text = text.replace(before, after)
+
     return unicodedata.normalize(
         "NFC",
         text.translate(
