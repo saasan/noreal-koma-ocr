@@ -37,11 +37,6 @@
         "PYTHONUNBUFFERED": "1"
     },
 
-    "runArgs": [
-        "--env-file",
-        ".env"
-    ],
-
     "mounts": [
         {
         "source": "${localEnv:HOME}${localEnv:USERPROFILE}/.gemini",
