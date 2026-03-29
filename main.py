@@ -1,3 +1,4 @@
+import argparse
 import base64
 import json
 import mimetypes
@@ -131,10 +132,18 @@ def load_image(inputs: dict) -> dict:
 @chain
 def image_model(inputs: dict) -> str | list[str | dict]:
     """画像とプロンプトを用いてモデルを呼び出す"""
-    model = ChatOpenAI(
-        model=settings.model_name,
-        temperature=settings.temperature,
-    )
+    if settings.use_ollama:
+        model = ChatOpenAI(
+            model=settings.model_name,
+            temperature=settings.temperature,
+            base_url=settings.ollama_base_url,
+            api_key="ollama",
+        )
+    else:
+        model = ChatOpenAI(
+            model=settings.model_name,
+            temperature=settings.temperature,
+        )
 
     msg = model.invoke(
         [
@@ -245,6 +254,17 @@ def process_images(image_dir: str, output_dir: str) -> None:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="存在しない漫画の1コマbot(@noreal_koma)の漫画からテキストデータを抽出する")
+    parser.add_argument("--ollama", action="store_true", help="ローカルのOllama APIを使用する")
+    parser.add_argument("--model", type=str, help="使用するモデル名を指定する")
+    args = parser.parse_args()
+
+    if args.ollama:
+        settings.use_ollama = True
+        settings.model_name = args.model if args.model else settings.ollama_model_name
+    elif args.model:
+        settings.model_name = args.model
+
     process_images(settings.image_dir, settings.output_dir)
 
 

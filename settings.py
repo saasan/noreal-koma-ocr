@@ -10,6 +10,12 @@ class Settings(BaseSettings):
     output_dir: str = "output"
     # 使用するモデル名
     model_name: str = "gpt-4o-mini"
+    # Ollamaを使用するかどうか
+    use_ollama: bool = False
+    # OllamaのAPIベースURL
+    ollama_base_url: str = "http://localhost:11434/v1"
+    # Ollama使用時のデフォルトモデル名
+    ollama_model_name: str = "qwen3.5:9b"
     # モデルに渡すTemperatureの値
     temperature: float = 0.0
     # テキストの置換対象文字列
