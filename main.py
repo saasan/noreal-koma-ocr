@@ -145,22 +145,21 @@ def image_model(inputs: dict) -> str | list[str | dict]:
             temperature=settings.temperature,
         )
 
-    msg = model.invoke(
-        [
-            HumanMessage(
-                content=[
-                    {"type": "text", "text": inputs["prompt"]},
-                    {"type": "text", "text": inputs["format_instructions"]},
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": inputs["image_url"]},
-                    },
-                ]
-            )
+    prompt = HumanMessage(
+        content=[
+            {"type": "text", "text": inputs["prompt"]},
+            {"type": "text", "text": inputs["format_instructions"]},
+            {
+                "type": "image_url",
+                "image_url": {"url": inputs["image_url"]},
+            },
         ]
     )
+    print(re.sub(r"(data:image/[^;]+;base64,)[^'\"]+", r"\1...", str(prompt.content)))
 
-    return msg.content
+    response = model.invoke([prompt])
+
+    return response.content
 
 
 def get_image_informations(image_path: str) -> dict:
