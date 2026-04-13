@@ -1,6 +1,7 @@
 import argparse
 import base64
 import json
+import logging
 import mimetypes
 import os
 import re
@@ -167,7 +168,7 @@ def image_model(inputs: dict) -> str | list[str | dict]:
             },
         ]
     )
-    print(re.sub(r"(data:image/[^;]+;base64,)[^'\"]+", r"\1...", str(prompt.content)))
+    logging.info(re.sub(r"(data:image/[^;]+;base64,)[^'\"]+", r"\1...", str(prompt.content)))
 
     response = model.invoke([prompt])
 
@@ -230,13 +231,13 @@ def process_images(image_dir: str, output_dir: str) -> None:
         if image_file.suffix.lower() not in {".png", ".jpg", ".jpeg"}:
             continue
 
-        print(f"Image file: {image_file.name}")
+        logging.info(f"Image file: {image_file.name}")
 
         output_path = output_dir_path / image_file.with_suffix(".json").name
 
         # 既にJSONファイルが存在する場合はスキップ
         if output_path.exists():
-            print(f"Skipping {image_file.name}, output already exists.")
+            logging.info(f"Skipping {image_file.name}, output already exists.")
             continue
 
         info = {
@@ -259,7 +260,7 @@ def process_images(image_dir: str, output_dir: str) -> None:
         if "reading" in info and isinstance(info["reading"], list):
             info["reading"] = [clean_reading(r) for r in info["reading"]]
 
-        print(info)
+        logging.info(info)
 
         with output_path.open("w", encoding="utf-8") as f:
             json.dump(info, f, ensure_ascii=False, indent=4)
@@ -267,6 +268,8 @@ def process_images(image_dir: str, output_dir: str) -> None:
 
 
 def main() -> None:
+    logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
+
     parser = argparse.ArgumentParser(description="存在しない漫画の1コマbot(@noreal_koma)の漫画からテキストデータを抽出する")
     parser.add_argument("--ollama", action="store_true", help="ローカルのOllama APIを使用する")
     parser.add_argument("--model", type=str, help="使用するモデル名を指定する")
