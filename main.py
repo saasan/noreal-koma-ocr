@@ -1,6 +1,7 @@
 import argparse
 import base64
 import json
+import logging
 import mimetypes
 import os
 import re
@@ -26,9 +27,20 @@ class ImageInformation(BaseModel):
     text: list[str] = Field(
         description=textwrap.dedent(
             """
-                - 画像内のセリフや背景に書かれた文字などをテキストとして書き出します
-                - 改行は省略し、1つの文字列としてまとめてください
-                - 認識できる文字がない場合は空のリストを返します
+                文字列の抽出
+                - 範囲: 吹き出し内のセリフ、および欄外の注意書き・煽り文を含める
+                - 除外:
+                  - 擬声語・擬音語(オノマトペ)は抽出対象外とする
+                  - ルビ(ふりがな)は無視し、親文字のみを抽出する
+                - 順序: 日本の漫画の一般的な読み順(右上 → 右下 → 左上 → 左下)に従って配列に格納する
+                - 粒度: 1つの吹き出し(またはテキストブロック)ごとに1つの文字列とみなし、各ブロックをリストの1要素とする
+                - 書式: 吹き出し(またはテキストブロック)内部の改行は削除する
+                - 誤字・脱字：修正せず、画像にあるがままを出力する (意図的な表現である可能性を考慮)
+                - 記号:
+                  - 句読点(、。)：全角として出力
+                  - 感嘆符・疑問符(！？)：
+                    - 連続する場合は半角(!!や!?など)として出力
+                    - 単体であれば全角(！、？)として出力
             """
         ).strip()
     )
@@ -36,9 +48,10 @@ class ImageInformation(BaseModel):
     reading: list[str] = Field(
         description=textwrap.dedent(
             """
-                - textのよみがなをひらがなで提供します
-                - textの要素1つにつき、1つの文字列が対応するリストです
-                - よみがなが分からない場合は空の文字列を返します
+                よみがなの付与
+                - textの各要素に対応する読みをひらがなで提供する
+                - textの要素1つにつき、1つの読みが対応するリストとする
+                - 読みが分からない場合は空の文字列をリストの1要素とする
             """
         ).strip()
     )
@@ -46,12 +59,13 @@ class ImageInformation(BaseModel):
     tag: list[str] = Field(
         description=textwrap.dedent(
             """
-                - 画像内に描かれている物を、検索用のタグとして一覧化します
-                - できる限り具体的な要素を抽出してください
+                視覚要素タグ
+                - textに含まれない視覚的な情報を抽出する
+                - 基準: pixivのタグとして一般的に存在し、検索に活用される用語を選択する
+                - 対象: 服装、髪型、小道具、背景の特徴など
                 - タグの例: QRコード,お団子ヘア,お嬢様,そばかす,ぱっつん,ふともも,アホ毛,エルフ耳,カチューシャ,ギザ歯,ケモノ,ケモミミ,ショートパンツ,ジャージ,スクール水着,スポーツ,スマートフォン,スーツ,セーラー服,タトゥー,タバコ,タンクトップ,タートルネック,ニーソックス,ネクタイ,ハムスター,パーカー,ヒゲ,ピアス,フード,ホクロ,ポニーテール,マスク,マフラー,マント,メカクレ,メスケモ,モヒカン,リボン,ワンピース,三つ編み,体操服,刀,制服,包帯,単眼,和服,学ラン,巨乳,帽子,広告,手袋,武器,水着,流血,片目隠れ,狐耳,猫耳,獣人,獣娘,獣耳,眼帯,眼鏡,着物,短刀,筋肉,羽,裸,角,道着,酒,銃,首輪,髪留め,鬼,魔族,黒服,黒白目
-                - 漫画で必ず描かれる物は除外してください (例: キャラクター,セリフ,吹き出し)
-                - 使用禁止タグ: アクション,アニメ,キャラクター,コミック,コメディ,シチュエーション,セリフ,パニック,会話,喜び,思考,恐怖,感情,感情,日常,汗,演技,漫画,緊張,表情,驚き,吹き出し
-                - タグとして出力できるものがない場合は空のリストを返します
+                - 禁止事項: 「キャラクター」や「吹き出し」、「モノクロ」など、漫画自体の概念そのものをタグとして含めないこと
+                - タグとして出力できるものがない場合は空のリストを返す
             """
         ).strip()
     )
@@ -145,22 +159,21 @@ def image_model(inputs: dict) -> str | list[str | dict]:
             temperature=settings.temperature,
         )
 
-    msg = model.invoke(
-        [
-            HumanMessage(
-                content=[
-                    {"type": "text", "text": inputs["prompt"]},
-                    {"type": "text", "text": inputs["format_instructions"]},
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": inputs["image_url"]},
-                    },
-                ]
-            )
+    prompt = HumanMessage(
+        content=[
+            {"type": "text", "text": inputs["prompt"]},
+            {"type": "text", "text": inputs["format_instructions"]},
+            {
+                "type": "image_url",
+                "image_url": {"url": inputs["image_url"]},
+            },
         ]
     )
+    logging.info(re.sub(r"(data:image/[^;]+;base64,)[^'\"]+", r"\1...", str(prompt.content)))
 
-    return msg.content
+    response = model.invoke([prompt])
+
+    return response.content
 
 
 def get_image_informations(image_path: str) -> dict:
@@ -169,8 +182,10 @@ def get_image_informations(image_path: str) -> dict:
     format_instructions = parser.get_format_instructions()
     prompt = textwrap.dedent(
         """
-            画像内のセリフや背景に書かれた文字などをすべて、正確にテキストとして書き出してください。
-            要するにOCRです。
+            # 役割
+            あなたは漫画の画像解析とデータ構造化に特化したエキスパートです。
+            提供された漫画のコマ画像から、検索性に優れたテキスト情報と視覚的なタグ情報を抽出し、
+            指定されたJSONスキーマに従って出力してください。
         """
     ).strip()
 
@@ -217,13 +232,13 @@ def process_images(image_dir: str, output_dir: str) -> None:
         if image_file.suffix.lower() not in {".png", ".jpg", ".jpeg"}:
             continue
 
-        print(f"Image file: {image_file.name}")
+        logging.info(f"Image file: {image_file.name}")
 
         output_path = output_dir_path / image_file.with_suffix(".json").name
 
         # 既にJSONファイルが存在する場合はスキップ
         if output_path.exists():
-            print(f"Skipping {image_file.name}, output already exists.")
+            logging.info(f"Skipping {image_file.name}, output already exists.")
             continue
 
         info = {
@@ -246,7 +261,7 @@ def process_images(image_dir: str, output_dir: str) -> None:
         if "reading" in info and isinstance(info["reading"], list):
             info["reading"] = [clean_reading(r) for r in info["reading"]]
 
-        print(info)
+        logging.info(info)
 
         with output_path.open("w", encoding="utf-8") as f:
             json.dump(info, f, ensure_ascii=False, indent=4)
@@ -254,6 +269,8 @@ def process_images(image_dir: str, output_dir: str) -> None:
 
 
 def main() -> None:
+    logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
+
     parser = argparse.ArgumentParser(description="存在しない漫画の1コマbot(@noreal_koma)の漫画からテキストデータを抽出する")
     parser.add_argument("--ollama", action="store_true", help="ローカルのOllama APIを使用する")
     parser.add_argument("--model", type=str, help="使用するモデル名を指定する")

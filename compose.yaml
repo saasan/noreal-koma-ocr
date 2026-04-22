@@ -13,6 +13,7 @@ services:
         source: ./output
         target: /app/output
     environment:
+      - TZ=Asia/Tokyo
       - OPENAI_API_KEY
       - IMAGE_DIR
       - OUTPUT_DIR
